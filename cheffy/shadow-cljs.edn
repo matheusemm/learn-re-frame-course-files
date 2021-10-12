@@ -9,7 +9,7 @@
                 [kibu/pushy "0.3.8"]
                 [com.andrewmcveigh/cljs-time "0.5.2"]]
 
- :nrepl        {:port 3333}
+ :nrepl {:port 3333}
 
  :builds {:app {:target :browser
                 :output-dir "public/js"
@@ -20,6 +20,6 @@
                 :compiler-options {:closure-defines {re-frame.trace/trace-enabled? true
                                                      day8.re-frame.tracing/trace-enabled? true}}
 
-                :devtools {:http-root   "public"
-                           :http-port   3000
-                           :preloads    [day8.re-frame-10x.preload]}}}}
+                :devtools {:http-root "public"
+                           :http-port 3000
+                           :preloads [day8.re-frame-10x.preload]}}}}

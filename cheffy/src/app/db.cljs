@@ -1,4 +1,5 @@
-(ns app.db)
+(ns app.db
+  (:require [re-frame.core :as rf]))
 
 (def initial-app-db {:auth {:uid nil}
                      :errors {}
@@ -286,3 +287,9 @@
                                                     :inboxes {"mike@mailinator.com" {:id :inbox-02
                                                                                      :notifications 6
                                                                                      :updated-at 1538697210537}}}}})
+
+(rf/reg-event-fx
+  :initialize-db
+  [(rf/inject-cofx :local-store-user)]
+  (fn [{:keys [local-store-user]} _]
+    {:db (assoc-in initial-app-db [:auth] local-store-user)}))
