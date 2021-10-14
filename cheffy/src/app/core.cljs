@@ -10,14 +10,22 @@
             [app.auth.subs]
             ;; --- become-a-chef ---
             [app.become-a-chef.views.become-a-chef :refer [become-a-chef]]
+            [app.become-a-chef.events]
             ;; --- inbox ---
-            [app.inbox.views.inboxes :refer [inboxes]]
+            [app.inbox.views.inboxes-page :refer [inboxes-page]]
+            [app.inbox.views.inbox-page :refer [inbox-page]]
+            [app.inbox.events]
+            [app.inbox.subs]
             ;; --- nav ---
             [app.nav.views.nav :refer [nav]]
             [app.nav.events]
             [app.nav.subs]
-            ;; --- nav ---
-            [app.recipes.views.recipes :refer [recipes]]
+            ;; --- recipes ---
+            [app.recipes.views.recipes-page :refer [recipes-page]]
+            [app.recipes.views.recipe-page :refer [recipe-page]]
+            [app.recipes.views.saved-page :refer [saved-page]]
+            [app.recipes.subs]
+            [app.recipes.events]
             [reagent.dom :as rdom]
             [re-frame.core :as rf]
             ["@smooth-ui/core-sc" :refer [Button Col Grid Normalize Row ThemeProvider]]))
@@ -29,9 +37,12 @@
     :sign-up [sign-up]
     :log-in [log-in]
     :become-a-chef [become-a-chef]
-    :inboxes [inboxes]
-    :recipes [recipes]
-    [recipes]))
+    :inboxes [inboxes-page]
+    :inbox [inbox-page]
+    :recipes [recipes-page]
+    :recipe [recipe-page]
+    :saved [saved-page]
+    [recipes-page]))
 
 (defn app
   []
