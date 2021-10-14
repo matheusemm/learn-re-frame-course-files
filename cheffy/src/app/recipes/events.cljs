@@ -1,5 +1,43 @@
 (ns app.recipes.events
-  (:require [re-frame.core :as rf]))
+  (:require [re-frame.core :as rf]
+            [day8.re-frame.http-fx]
+            [ajax.core :as ajax]
+            [clojure.walk :as w]))
+
+(def recipes-endpoint "https://gist.githubusercontent.com/jacekschae/50ffe6e8851a5dfe35e932682ca32d85/raw/06e8041d0abf86e2c5d809a334cf8f18d3d6303b/recipes.json")
+
+(rf/reg-event-fx
+  :get-recipes
+  (fn [{:keys [db]} _]
+    {:db (assoc-in db [:loading :recipes] true)
+     :http-xhrio {:method :get
+                  :uri recipes-endpoint
+                  :response-format (ajax/json-response-format {:keyword? true})
+                  :on-success [:get-recipes-success]
+                  :on-failure [:endpoint-request-error :get-recipes]}}))
+
+(defn keywordize-id
+  [coll]
+  (->> coll
+       (w/keywordize-keys)
+       (map (fn [{:keys [id] :as values}]
+              [(keyword id)
+               (update values :id keyword)]))
+       (into {})))
+
+(rf/reg-event-db
+  :get-recipes-success
+  (fn [db [_ recipes]]
+    (-> db
+        (assoc-in [:loading :recipes] false)
+        (assoc-in [:recipes] (into {} (keywordize-id recipes))))))
+
+(rf/reg-event-db
+  :endpoint-request-error
+  (fn [db [_ request-type response]]
+    (-> db
+        (assoc-in [:errors request-type] (get response :status-text))
+        (assoc-in [:loading request-type] false))))
 
 (rf/reg-event-db
   :save-recipe
