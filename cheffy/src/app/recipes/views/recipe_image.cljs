@@ -3,16 +3,19 @@
             [app.components.modal :refer [modal]]
             [reagent.core :as r]
             [re-frame.core :as rf]
-            ["@smooth-ui/core-sc" :refer [Box Button Modal ModalBody ModalContent ModalDialog ModalFooter Typography]]))
+            ["@smooth-ui/core-sc" :refer [Box Button Modal ModalBody ModalContent ModalDialog ModalFooter Typography]]
+            [clojure.string :as str]))
 
 (defn recipe-image
   []
   (let [initial-values {:img ""}
         values (r/atom initial-values)
         author? @(rf/subscribe [:author?])
-        save (fn [img]
-               (rf/dispatch [:upsert-image img])
-               (reset! values initial-values))
+        save (fn [event {:keys [img]}]
+               (.preventDefault event)
+               (when (not (str/blank? img))
+                 (rf/dispatch [:upsert-image {:img img}])
+                 (reset! values initial-values)))
         open-modal (fn [{:keys [modal-name recipe]}]
                      (rf/dispatch [:open-modal modal-name])
                      (reset! values recipe))]
@@ -31,9 +34,10 @@
          (when author?
            [modal {:modal-name :image-editor
                    :header "Image"
-                   :body [form-group {:id :img :label "URL" :type "text" :values values}]
+                   :body [:form {:on-submit #(save % @values)}
+                          [form-group {:id :img :label "URL" :type "text" :values values}]]
                    :footer [:<>
                             [:> Button {:on-click #(rf/dispatch [:close-modal])
                                         :variant "light"}
                              "Cancel"]
-                            [:> Button {:on-click #(save @values)} "Save"]]}])]))))
+                            [:> Button {:on-click #(save % @values)} "Save"]]}])]))))

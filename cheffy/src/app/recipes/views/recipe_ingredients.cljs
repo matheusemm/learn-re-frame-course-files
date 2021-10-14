@@ -1,6 +1,7 @@
 (ns app.recipes.views.recipe-ingredients
   (:require [app.components.form-group :refer [form-group]]
             [app.components.modal :refer [modal]]
+            [app.helpers :as h]
             [reagent.core :as r]
             [re-frame.core :as rf]
             ["@smooth-ui/core-sc" :refer [Box Button Col Row Typography]]
@@ -14,12 +15,16 @@
         open-modal (fn [{:keys [modal-name ingredient]}]
                      (rf/dispatch [:open-modal modal-name])
                      (reset! values ingredient))
-        save (fn [{:keys [id amount measure name]}]
-               (rf/dispatch [:upsert-ingredient {:id (or id (keyword (str "ingredient-" (random-uuid))))
-                                                 :name (str/trim name)
-                                                 :amount (js/parseInt amount)
-                                                 :measure (str/trim measure)}])
-               (reset! values initial-values))]
+        save (fn [event {:keys [id amount measure name]}]
+               (.preventDefault event)
+               (when (and (h/valid-number? amount)
+                          (not (str/blank? measure))
+                          (not (str/blank? name)))
+                 (rf/dispatch [:upsert-ingredient {:id (or id (keyword (str "ingredient-" (random-uuid))))
+                                                   :name (str/trim name)
+                                                   :amount (js/parseInt amount)
+                                                   :measure (str/trim measure)}])
+                 (reset! values initial-values)))]
     (fn []
       (let [ingredients @(rf/subscribe [:ingredients])
             author? @(rf/subscribe [:author?])]
@@ -49,7 +54,7 @@
           (when author?
             [modal {:modal-name :ingredient-editor
                     :header "Ingredient"
-                    :body [:<>
+                    :body [:form {:on-submit #(save % @values)}
                            [:> Row
                             [:> Col
                              [form-group {:id :amount :label "Amount" :type "number" :values values}]]
@@ -57,7 +62,12 @@
                              [form-group {:id :measure :label "Measure" :type "text" :values values}]]]
                            [:> Row
                             [:> Col
-                             [form-group {:id :name :label "Name" :type "text" :values values}]]]]
+                             [form-group {:id :name
+                                          :label "Name"
+                                          :type "text"
+                                          :values values
+                                          :on-key-down #(when (= (.-which %) 13)
+                                                          (save % @values))}]]]]
                     :footer [:<>
                              (when-let [ingredient-id (:id @values)]
                                [:a {:href "#"
@@ -68,4 +78,4 @@
                                          :mx 10
                                          :on-click #(rf/dispatch [:close-modal])}
                               "Cancel"]
-                             [:> Button {:on-click #(save @values)} "Save"]]}])]]))))
+                             [:> Button {:on-click #(save % @values)} "Save"]]}])]]))))

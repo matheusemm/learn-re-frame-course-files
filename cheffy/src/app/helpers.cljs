@@ -26,3 +26,8 @@
 (defn format-price
   [cents]
   (str (/ (js/parseInt cents) 100) " €"))
+
+(defn valid-number?
+  [val]
+  (let [parsed (js/parseInt val)]
+    (and (not (js/isNaN parsed)) (number? parsed))))
