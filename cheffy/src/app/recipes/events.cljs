@@ -1,14 +1,19 @@
 (ns app.recipes.events
-  (:require [re-frame.core :as rf]
+  (:require [app.helpers :as h]
+            [app.spec :refer [check-spec-interceptor]]
+            [re-frame.core :as rf]
             [day8.re-frame.http-fx]
             [day8.re-frame.tracing :refer-macros [fn-traced]]
             [ajax.core :as ajax]
             [clojure.walk :as w]))
 
+(def recipes-interceptors [check-spec-interceptor])
+
 (def recipes-endpoint "https://gist.githubusercontent.com/jacekschae/50ffe6e8851a5dfe35e932682ca32d85/raw/06e8041d0abf86e2c5d809a334cf8f18d3d6303b/recipes.json")
 
 (rf/reg-event-fx
   :get-recipes
+  recipes-interceptors
   (fn-traced [{:keys [db]} _]
     {:db (assoc-in db [:loading :recipes] true)
      :http-xhrio {:method :get
@@ -42,54 +47,64 @@
 
 (rf/reg-event-db
   :save-recipe
+  recipes-interceptors
   (fn-traced [db [_ recipe-id]]
     (let [uid (get-in db [:auth :uid])]
       (-> db
           (update-in [:users uid :saved] conj recipe-id)
           (update-in [:recipes recipe-id :saved-count] inc)))))
 
-(rf/reg-event-fx
+(rf/reg-event-db
   :delete-ingredient
-  (fn-traced [{:keys [db]} [_ ingredient-id]]
+  recipes-interceptors
+  (fn-traced [db [_ ingredient-id]]
     (let [recipe-id (get-in db [:nav :active-recipe])]
-      {:db (update-in db [:recipes recipe-id :ingredients] dissoc ingredient-id)
-       :dispatch [:close-modal]})))
+      (-> db
+          (update-in [:recipes recipe-id :ingredients] dissoc ingredient-id)
+          (h/close-modal)))))
 
-(rf/reg-event-fx
+(rf/reg-event-db
   :upsert-ingredient
-  (fn-traced [{:keys [db]} [_ {:keys [id name amount measure]}]]
+  recipes-interceptors
+  (fn-traced [db [_ {:keys [id name amount measure]}]]
     (let [recipe-id (get-in db [:nav :active-recipe])
           ingredients (get-in db [:recipes recipe-id :ingredients])
           order (or (get-in ingredients [id :order])
                     (inc (count ingredients)))]
-      {:db (assoc-in db [:recipes recipe-id :ingredients id] {:id id
-                                                              :order order
-                                                              :name name
-                                                              :amount amount
-                                                              :measure measure})
-       :dispatch [:close-modal]})))
+      (-> db
+          (assoc-in [:recipes recipe-id :ingredients id] {:id id
+                                                          :order order
+                                                          :name name
+                                                          :amount amount
+                                                          :measure measure})
+          (h/close-modal)))))
 
-(rf/reg-event-fx
+(rf/reg-event-db
   :delete-step
-  (fn-traced [{:keys [db]} [_ step-id]]
+  recipes-interceptors
+  (fn-traced [db [_ step-id]]
     (let [recipe-id (get-in db [:nav :active-recipe])]
-      {:db (update-in db [:recipes recipe-id :steps] dissoc step-id)
-       :dispatch [:close-modal]})))
+      (-> db
+          (update-in [:recipes recipe-id :steps] dissoc step-id)
+          (h/close-modal)))))
 
-(rf/reg-event-fx
+(rf/reg-event-db
   :upsert-step
-  (fn-traced [{:keys [db]} [_ {:keys [id desc]}]]
+  recipes-interceptors
+  (fn-traced [db [_ {:keys [id desc]}]]
     (let [recipe-id (get-in db [:nav :active-recipe])
           steps (get-in db [:recipes recipe-id :steps])
           order (or (get-in steps [id :order])
                     (inc (count steps)))]
-      {:db (assoc-in db [:recipes recipe-id :steps id] {:id id
-                                                        :order order
-                                                        :desc desc})
-       :dispatch [:close-modal]})))
+      (-> db
+          (assoc-in [:recipes recipe-id :steps id] {:id id
+                                                    :order order
+                                                    :desc desc})
+          (h/close-modal)))))
 
 (rf/reg-event-fx
   :delete-recipe
+  recipes-interceptors
   (fn-traced [{:keys [db]}]
     (let [recipe-id (get-in db [:nav :active-recipe])]
       {:db (update-in db [:recipes] dissoc recipe-id)
@@ -98,36 +113,44 @@
                     [:close-modal]]
        :navigate-to {:path "/recipes/"}})))
 
-(rf/reg-event-fx
+(rf/reg-event-db
   :upsert-recipe
-  (fn-traced [{:keys [db]} [_ {:keys [name prep-time]}]]
+  recipes-interceptors
+  (fn-traced [db [_ {:keys [name prep-time]}]]
     (let [recipe-id (get-in db [:nav :active-recipe])
           id (or recipe-id (keyword (str "recipe-" (random-uuid))))
           uid (get-in db [:auth :uid])]
-      {:db (update-in db [:recipes id] merge {:id id
-                                              :name name
-                                              :prep-time prep-time
-                                              :cook uid
-                                              :public? false})
-       :dispatch [:close-modal]})))
+      (-> db
+          (update-in [:recipes id] merge {:id id
+                                          :name name
+                                          :prep-time prep-time
+                                          :cook uid
+                                          :public? false})
+          (h/close-modal)))))
 
-(rf/reg-event-fx
+(rf/reg-event-db
   :publish-recipe
-  (fn-traced [{:keys [db]} [_ {:keys [price]}]]
+  recipes-interceptors
+  (fn-traced [db [_ {:keys [price]}]]
     (let [recipe-id (get-in db [:nav :active-recipe])]
-      {:db (update-in db [:recipes recipe-id] merge {:price price :public? true})
-       :dispatch [:close-modal]})))
+      (-> db
+          (update-in [:recipes recipe-id] merge {:price price :public? true})
+          (h/close-modal)))))
 
-(rf/reg-event-fx
+(rf/reg-event-db
   :unpublish-recipe
-  (fn-traced [{:keys [db]} _]
+  recipes-interceptors
+  (fn-traced [db _]
     (let [recipe-id (get-in db [:nav :active-recipe])]
-      {:db (assoc-in db [:recipes recipe-id :public?] false)
-       :dispatch [:close-modal]})))
+      (-> db
+          (assoc-in [:recipes recipe-id :public?] false)
+          (h/close-modal)))))
 
-(rf/reg-event-fx
+(rf/reg-event-db
   :upsert-image
-  (fn-traced [{:keys [db]} [_ {:keys [img]}]]
+  recipes-interceptors
+  (fn-traced [db [_ {:keys [img]}]]
     (let [recipe-id (get-in db [:nav :active-recipe])]
-      {:db (assoc-in db [:recipes recipe-id :img] img)
-       :dispatch [:close-modal]})))
+      (-> db
+          (assoc-in [:recipes recipe-id :img] img)
+          (h/close-modal)))))

@@ -1,5 +1,6 @@
 (ns app.auth.events
-  (:require [cljs.reader :refer [read-string]]
+  (:require [app.spec :refer [check-spec-interceptor]]
+            [cljs.reader :refer [read-string]]
             [re-frame.core :as rf]))
 
 (def cheffy-user-key "cheffy-user")
@@ -13,8 +14,8 @@
   []
   (.removeItem js/localStorage cheffy-user-key))
 
-(def set-user-interceptors [(rf/after set-user-ls!)])
-(def remove-user-interceptors [(rf/after remove-user-ls!)])
+(def set-user-interceptors [(rf/after set-user-ls!) check-spec-interceptor])
+(def remove-user-interceptors [(rf/after remove-user-ls!) check-spec-interceptor])
 
 (rf/reg-cofx
   :local-store-user

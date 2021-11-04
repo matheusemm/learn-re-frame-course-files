@@ -31,3 +31,7 @@
   [val]
   (let [parsed (js/parseInt val)]
     (and (not (js/isNaN parsed)) (number? parsed))))
+
+(defn close-modal
+  [db]
+  (assoc-in db [:nav :active-modal] nil))

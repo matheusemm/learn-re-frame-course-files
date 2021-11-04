@@ -3,7 +3,7 @@
             [app.components.modal :refer [modal]]
             [reagent.core :as r]
             [re-frame.core :as rf]
-            ["@smooth-ui/core-sc" :refer [Box Button Col Row Typography]]
+            ["@smooth-ui/core-sc" :refer [Box Button Col Row Textarea Typography]]
             ["styled-icons/fa-solid/Plus" :refer [Plus]]
             [clojure.string :as str]))
 
@@ -53,7 +53,7 @@
                                          :label "Description"
                                          :type "text"
                                          :values values
-                                         :textarea? true}]]]
+                                         :element Textarea}]]]
                     :footer [:<>
                              (when-let [step-id (:id @values)]
                                [:a {:href "#"

@@ -1,8 +1,10 @@
 (ns app.nav.events
   (:require [app.router :as router]
+            [app.helpers :as h]
+            [app.spec :refer [check-spec-interceptor]]
             [re-frame.core :as rf]))
 
-(def nav-interceptors [(rf/path :nav)])
+(def nav-interceptors [check-spec-interceptor (rf/path :nav)])
 
 (rf/reg-fx
   :navigate-to
@@ -23,9 +25,8 @@
 
 (rf/reg-event-db
   :close-modal
-  nav-interceptors
-  (fn [nav _]
-    (assoc nav :active-modal nil)))
+  (fn [db _]
+    (h/close-modal db)))
 
 (rf/reg-event-db
   :open-modal
